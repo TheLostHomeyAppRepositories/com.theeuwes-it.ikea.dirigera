@@ -40,5 +40,8 @@
   },
   "1.0.13": {
     "en": "Added luminance support for Vallhorn sensors"
+  },
+  "1.0.14": {
+    "en": "Added support for the MYGGSPRAY motion sensor"
   }
 }

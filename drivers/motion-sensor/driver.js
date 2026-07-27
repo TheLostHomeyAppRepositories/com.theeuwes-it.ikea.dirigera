@@ -17,7 +17,9 @@ module.exports = class DirigeraMotionSensorDriver extends DirigeraDriver {
     const devices = await this.homey.app.getDevices();
     const motionSensors = [];
     for (const device of devices) {
-      if (device.type !== 'sensor' || device.deviceType !== 'motionSensor') {
+      // MYGGSPRAY is a Matter device and reports itself as an occupancySensor
+      // instead of a motionSensor.
+      if (device.deviceType !== 'motionSensor' && device.deviceType !== 'occupancySensor') {
         continue;
       }
 

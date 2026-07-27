@@ -137,7 +137,9 @@ class IkeaDirigeraGatewayApp extends Homey.App {
         }
         break;
     }
-    if (type == 'unknown' && deviceType === 'lightSensor') {
+    // Matter based sensors (MYGGSPRAY) are reported as an occupancySensor plus a
+    // separate lightSensor, and are not always announced with the 'sensor' type.
+    if (deviceType === 'occupancySensor' || deviceType === 'lightSensor') {
       driverId = 'motion-sensor';
     }
     if (driverId != null) {

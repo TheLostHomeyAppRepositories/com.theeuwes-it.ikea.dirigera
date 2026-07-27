@@ -34,6 +34,9 @@ module.exports = class DirigeraMotionSensorDriver extends DirigeraDriver {
           id: id,
         },
         capabilities,
+        store: {
+          matterIlluminance: device.deviceType === 'occupancySensor',
+        },
         name: (device['attributes'].customName !== '' ? device['attributes'].customName : device['attributes'].model),
       });
     }

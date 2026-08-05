@@ -8,30 +8,60 @@ module.exports = class DirigeraOutletDevice extends DirigeraDevice {
     this._instanceId = this.getData().id;
     const device = await this.homey.app.getDevice(this._instanceId);
     await this.updateSettings(device);
-    this.updateCapabilities(device);
+    this._realId = device ? device.id : this._instanceId;
+
+    const newCaps = ['measure_power', 'measure_voltage', 'measure_current', 'meter_power'];
+    for (const cap of newCaps) {
+      if (!this.hasCapability(cap)) {
+        await this.addCapability(cap).catch(this.error);
+      }
+    }
+
+    const related = await this.homey.app.getRelatedDevices(this._instanceId);
+    this.updateCapabilities(device, related);
+
     this.registerCapabilityListener('onoff', async (value) => {
       const dirigera = this.homey.app.getDirigera();
       if (this.isDebugLoggingEnabled()) {
         this.log(`${this.getName()} - onoff: Setting outlet state to ${value}`);
       }
-      dirigera.setAttribute(this._instanceId, { 'isOn': value });
+      dirigera.setAttribute(this._realId, { 'isOn': value });
     })
     this.log(`Dirigera Outlet ${this.getName()} has been initialized`);
   }
 
-  updateCapabilities(outlet) {
-    if (typeof outlet !== 'undefined') {
+  updateCapabilities(status, related) {
+    if (status == null) return;
 
-      if (outlet.isReachable) {
-        this.setAvailable()
-            .catch(this.error);
+    const isSensorStatus = status.deviceType === 'electricalSensor';
+
+    if (!isSensorStatus) {
+      if (status.isReachable) {
+        this.setAvailable().catch(this.error);
       } else {
-        this.setUnavailable('(temporary) unavailable')
-            .catch(this.error);
+        this.setUnavailable('(temporary) unavailable').catch(this.error);
       }
-      if (this.hasCapability('onoff')) {
-        this.setCapabilityValue('onoff', outlet.attributes['isOn'])
-            .catch(this.error);
+      if (this.hasCapability('onoff') && status.attributes && 'isOn' in status.attributes) {
+        this.setCapabilityValue('onoff', status.attributes['isOn']).catch(this.error);
+      }
+    }
+
+    const sensorAttrs = isSensorStatus
+        ? status.attributes
+        : (related || []).find(d => d.deviceType === 'electricalSensor')?.attributes;
+
+    if (sensorAttrs != null) {
+      if (this.hasCapability('measure_power') && typeof sensorAttrs.currentActivePower === 'number') {
+        this.setCapabilityValue('measure_power', sensorAttrs.currentActivePower).catch(this.error);
+      }
+      if (this.hasCapability('measure_voltage') && typeof sensorAttrs.currentVoltage === 'number') {
+        this.setCapabilityValue('measure_voltage', sensorAttrs.currentVoltage).catch(this.error);
+      }
+      if (this.hasCapability('measure_current') && typeof sensorAttrs.currentAmps === 'number') {
+        this.setCapabilityValue('measure_current', sensorAttrs.currentAmps).catch(this.error);
+      }
+      if (this.hasCapability('meter_power') && typeof sensorAttrs.totalEnergyConsumed === 'number') {
+        this.setCapabilityValue('meter_power', sensorAttrs.totalEnergyConsumed).catch(this.error);
       }
     }
   }

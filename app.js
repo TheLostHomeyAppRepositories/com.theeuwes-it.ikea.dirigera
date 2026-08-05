@@ -106,7 +106,7 @@ class IkeaDirigeraGatewayApp extends Homey.App {
   async getDevice(id) {
     const devices = await this.getDevices();
     for (const device of devices) {
-      if (device.id === id) {
+      if (device.id === id || device.relationId === id) {
         return device;
       }
     }
@@ -116,6 +116,11 @@ class IkeaDirigeraGatewayApp extends Homey.App {
   /*
    * @returns DirigeraDriver
    */
+  async getRelatedDevices(relationId) {
+    const devices = await this.getDevices();
+    return devices.filter(device => device.id === relationId || device.relationId === relationId);
+  }
+
   getDriverForType(type, deviceType) {
     let driverId = null;
     switch (type) {
@@ -139,6 +144,9 @@ class IkeaDirigeraGatewayApp extends Homey.App {
     }
     // Matter based sensors (MYGGSPRAY) are reported as an occupancySensor plus a
     // separate lightSensor, and are not always announced with the 'sensor' type.
+    if (deviceType === 'electricalSensor') {
+      driverId = 'outlet';
+    }
     if (deviceType === 'occupancySensor' || deviceType === 'lightSensor') {
       driverId = 'motion-sensor';
     }

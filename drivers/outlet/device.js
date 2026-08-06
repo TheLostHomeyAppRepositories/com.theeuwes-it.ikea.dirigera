@@ -27,7 +27,24 @@ module.exports = class DirigeraOutletDevice extends DirigeraDevice {
       }
       dirigera.setAttribute(this._realId, { 'isOn': value });
     })
+
+    this._pollInterval = this.homey.setInterval(async () => {
+      try {
+        const freshDevice = await this.homey.app.getDevice(this._instanceId);
+        const freshRelated = await this.homey.app.getRelatedDevices(this._instanceId);
+        this.updateCapabilities(freshDevice, freshRelated);
+      } catch (err) {
+        this.error('Poll refresh failed:', err);
+      }
+    }, 60000);
+
     this.log(`Dirigera Outlet ${this.getName()} has been initialized`);
+  }
+
+  async onUninit() {
+    if (this._pollInterval) {
+      this.homey.clearInterval(this._pollInterval);
+    }
   }
 
   updateCapabilities(status, related) {

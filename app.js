@@ -21,6 +21,27 @@ class IkeaDirigeraGatewayApp extends Homey.App {
         this.log(`Error: ${err.message}`);
       }
     })();
+
+    // Re-connect automatically whenever the IP address or access token is
+    // (re-)configured on the settings page, instead of requiring a manual
+    // app restart. Debounced because the settings page saves several keys
+    // in quick succession during the authentication flow.
+    this.homey.settings.on('set', (key) => {
+      if (key !== 'ipAddress' && key !== 'accessToken') {
+        return;
+      }
+      if (this._reconnectTimeout) {
+        this.homey.clearTimeout(this._reconnectTimeout);
+      }
+      this._reconnectTimeout = this.homey.setTimeout(async () => {
+        this.log(`Setting '${key}' changed, reconnecting to DIRIGERA gateway...`);
+        try {
+          await this.connect();
+        } catch (err) {
+          this.log(`Error reconnecting: ${err.message}`);
+        }
+      }, 2000);
+    });
   }
 
   async connect() {

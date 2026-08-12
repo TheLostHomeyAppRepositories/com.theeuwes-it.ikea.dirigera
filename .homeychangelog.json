@@ -46,5 +46,8 @@
   },
   "1.0.15": {
     "en": "Fixed the luminance readings of the MYGGSPRAY motion sensor"
+  },
+  "1.0.16": {
+    "en": "Fix for GRILLPLATS outlets; Add energy monitoring to outlets; Fix for auto-reconnecting when IP address or access token changes"
   }
 }
